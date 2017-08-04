@@ -1,0 +1,327 @@
+---
+title: "Exam-2017"
+author: '722797   -Daniel Da Silva Fernandes'
+date: "August 4, 2017"
+output: md_document
+---
+
+
+#Question 1
+```{r Question1, echo=TRUE}
+
+
+library(stats)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(dplyr)
+
+
+#Import data set
+
+pain_intensity <- read_csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_1.csv")
+
+pi <- pain_intensity
+
+print(pi)
+#1
+#The data given in this question isnt tidy beacuse it is presented in wide format as compared to long format. Furthermore there are values in the table which are out of range and would affect the distribution of the distribution of the data set when performing the respeective statistical tests . As a result all columns which have '9999' should be omited
+
+
+#2
+# Tidy data
+ 
+pi2 <- pi[,-(1:3),drop = FALSE] #Column 1-3 removed for plotting graph
+
+pi2
+
+pi3 <- pi2[-c(1),] #Row 1 removed
+pi3
+
+
+
+
+
+
+```
+
+
+#Question 2
+
+###Null hypothesis:
+####There is no asociation between religion (given as the ratio of Catholics:Protestants) and Fertility .
+
+###Alternative hypothesis:
+####There is an asociation between religion (given as the ratio of Catholics:Protestants) and Fertility .
+
+###Type of data being analysed:
+####The data is continues and is assumed to be normally distributed.
+####We are looking at the association between 2 variables.
+
+###Statistical test
+####Linear Regression Pearson Correlation
+
+###Test assumptions
+####Parametric test, therefore the following assumption need to be met:
+####- The distribution of the data in the    population is Gaussian
+####- Equal variance across groups
+####- The errors are independent
+####- Data are unmatched
+
+```{r Question2, echo=TRUE}
+
+library(stats)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+#import data set
+fertility <- read_csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_2.csv")
+
+fer <- fertility
+
+print.data.frame(fer)
+
+
+#Tidying data
+
+fer2 <- gather(fer, 'religion', 'ratio', Catholic) 
+print.data.frame(fer2)
+# This is done  as  we are trying to find out the relationship between fertility to that of the ratio of catholics to protestants which is indicated by the column labeled 'ratio'.
+
+#Exploratory figures and summaries
+
+summary(fer)
+
+fer3 <- fer2[,-(3), drop = FALSE] #omited column 3 for practicalities sake.
+fer3
+
+plot(fer3$ratio, fer3$Fertility) #scatterplot looking at the association between the two variables.
+
+#Analysis
+#Since we are looking for a relationship between 2 variables a linear regresion correlation test will be used to test for significance
+
+###Test assumptions
+####Parametric test, therefore the following assumption need to be met:
+####- The distribution of the data in the    population is Gaussian
+####- Equal variance across groups
+####- The errors are independent
+####- Data are unmatched
+
+coef(lm(ratio ~ Fertility, data = fer3))# Allows us to get intercepts for abline showing a bositive association
+
+fer3a <-fer3[, -(1), drop = FALSE]
+fer3a
+
+fer4<- cor.test(fer3$ratio, fer3$Fertility,
+               method = 'pearson')
+
+fer4
+
+a <- lm(fer3a)
+
+summary(a)# p=0.001 R^2=0.19 r=0.4
+
+
+p <- ggplot(fer3a, aes(ratio, Fertility))+ geom_point() + labs(title = " Relalationship Between the Ratio of Catholics to Protestants and Fertility ")
+
+
+p + geom_smooth(method = "lm", se = FALSE)
+
+#Now we go onto the diagmostic plots for the tests for normal distribution and homoskedasticy.
+
+
+qqnorm(a$residuals, main = "Normal Q-Q Plot")  
+qqline(a$residuals, col = "red")
+
+#According to this diagnostic plot we observe that there is a linear relationship between the resduals which therefore tests the linear regression model for normality.
+
+plot( x = a$fitted, y = a$residuals, main = 'Heteroskedasticy plot')
+abline(h = 0, col = 'red')
+#The distribution of the data is heteroskedastic.
+
+par(mfcol = c(2, 2))
+plot(fer3a)
+
+```
+
+###Conclusion
+
+####As per the data collected we see that the greater the ratio of Catholics:Protestants the greater the measure of fertility (See scatter plot regresion line).  According to the tests performed we see that not all the assumtions are met for a Linear regression model. The data desplays a significantly positive relationship (r = 0.4, p = 0.001029) with very little deviation from the normal(see QQ plot), furthermore heteroskedaticy is observed which tells us that there is an abnormal/uneven distribution within the sample population used. As a reult a linear regression model should not be used despite (Im)test results being in favour of this model.
+###___________________________________________________________________________________________________________________________________________
+#
+
+
+
+
+#Question 3
+
+###Null hypothesis:
+####There is no asociation between crop yeilds and treatment conditions .
+
+###Alternative hypothesis:
+####There is an asociation between crop yeilds and treatment conditions .
+
+###Type of data being analysed:
+####The data is continous and is assumed to be normally distributed.
+####We are looking at 3 measurments (treatments) per individual(crop yeilds)
+
+###Statistical test
+####A one way ANOVA with pairwise post-hoc test will be performed
+
+###Test assumptions
+####Parametric test, therefore the following assumption need to be met:
+####- The distribution of the data in the    population is Gaussian
+####- Equal variance across groups
+####- The errors are independent
+####- Data are unmatched
+```{r Question3, echo=TRUE}
+
+library(stats)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(dplyr)
+
+#import data set
+crop_yeilds <- read_csv('https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_3.csv')
+
+cy <- crop_yeilds
+
+#Tidying data
+print.data.frame(cy) # Data not tidy
+
+cy1 <- gather(cy, 'Test', 'Value',control:treatment_2) #Data is in long format which will be used for the statistical testing
+print(cy1)
+
+#Exploratory figures and summaries
+
+summary(cy)
+
+boxplot(cy)
+
+#Analysis
+
+# According to the plot we see that there might be differences between groups
+#Since there are 3 measurements for the same condition as well as the fact that the data is continuous and assumed to be normally distributed we use a 1 way ANOVA to test the Alternative hypothesis.
+
+#3-ANOVA test which tests for significatnts
+yeild_model=lm(Value~Test, data=cy1)
+anova(yeild_model)
+
+summary(yeild_model)
+
+#4-Post-hoc test which corrects (x)\ for mutiple comparisons which avoids type 1 and 2 error
+
+pairwise.t.test(cy1$Value, cy1$Test,#  or  summary(aov(Value~Test, data = cy1))
+                p.adjust.method = 'holm',
+                paired = FALSE)
+
+
+#Since F = 4.84 and p<0.05 we may accept the Alternative hypothesis and reject the Null hypothesis.
+
+#Confidence intervals 
+cy1 %>%
+    filter(Test == 'treatment_1' | Test == 'treatment_2') %>%
+    t.test(Value ~ Test, data = .) %>%
+    .$conf.int
+
+cy1 %>%
+    filter(Test == 'control' | Test == 'treatment_1') %>%
+    t.test(Value ~ Test, data = .) %>%
+    .$conf.int
+
+
+cy1 %>%
+    filter(Test == 'control' | Test == 'treatment_2') %>%
+    t.test(Value ~ Test, data = .) %>%
+    .$conf.int
+```
+###Conclusions
+
+####According to the ANOVA, treatment_2 offers the greatest crop yeild where p < 0.05 which is obtained from F-statistics. The Post-Hoc test tells us that only one of the three differences between groups are significant after correcting for errors. The confidence intervals further prove that treatment 2 offers the best yeild when compared to control treatment. The alternative hypothesis is therefore accepted...treatment conditions are associated to crop yeild.
+###___________________________________________________________________________________________________________________________________________
+#
+
+#Question 4
+
+###Null hypothesis:
+####There is no asociation between Diet and Health Condition .
+
+###Alternative hypothesis:
+####There is an asociation between Diet and Health Condition .
+
+###Type of data being analysed:
+####The data is ordinal and as a result non-parametric.
+####We are looking at 2 different groups (AHA and Mediterranean diet)
+
+###Statistical test
+#### A Cochran-Mantel-Haenszel test will be performed
+
+###Test assumptions
+####Non-Parametric test, therefore the following assumption need to be met:
+####Observations are independent (unpaired)
+####Observations follow the same distribution
+####Random sampling
+
+```{r Question4, echo=TRUE}
+
+library(stats)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(dplyr)
+library(vcdExtra)
+
+
+#import data
+
+outcomes <- read_csv('https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_4.csv')
+
+oc <- outcomes
+print(oc) # n=605
+
+#Tidy data
+
+# Data is in long format so it is tidy however it could however be tabulated to facilitate the analysis.
+
+head(oc)#-Content of first head  
+tail(oc)#-Content of first tail
+
+oc1 <- group_by(oc, Diet)
+oc1
+
+oc2 <- xtabs(~Diet + Condition, data = oc1)
+
+oc2 # Here we see a 3*2 contingency table 
+
+#Exploratory figures and summaries
+
+barplot(oc2)
+mosaicplot(oc2)
+
+
+#Analysis
+###
+
+#The data being analysed is ordinal
+
+#As a result the followibng assumptions should be met:
+# - Observations are independent (unpaired)
+# - Observations follow the same distribution
+# - Random sampling
+
+# A Cochran-Mantel-Haenszel test will be performed to test the Alternative Hypothesis
+
+CMHtest(oc2, types = c("cmeans"))
+
+# From the CMH statistical test p<0.001 and X^2 = 15.4
+
+
+
+```
+
+###Conclusions:
+####According to the statistical test performed the Alternative hypothesis is confirmed because it has been shown that p<0.05 and X^2 = 15.4. ####Clearly Diet has an effect on health with the Mediterranean diet being significantly healthy.
